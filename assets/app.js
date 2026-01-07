@@ -286,7 +286,7 @@ function renderMap(varName, serieName) {
       x: 0.02, xanchor: "left",
       font: { size: 14 }
     },
-    height: 560,
+    height: 520,
     // mais espaço no topo (título não invade o mapa)
     margin: { l: 10, r: 10, t: 88, b: 0 },
     separators: ".,",
@@ -299,7 +299,7 @@ function renderMap(varName, serieName) {
     updatemenus: [{
       type: "buttons",
       direction: "left",
-      x: 0.02, y: -0.18,
+      x: 0.02, y: 0.02,
       xanchor: "left", yanchor: "bottom",
       showactive: false,
       buttons: [
@@ -317,10 +317,9 @@ function renderMap(varName, serieName) {
     }],
     sliders: [{
       active: 0,
-      x: 0.20, y: -0.18, len: 0.78,
+      x: 0.20, y: 0.02, len: 0.78,
       xanchor: "left", yanchor: "bottom",
       currentvalue: { prefix: "Ano: " },
-      pad: { t: 0, b: 0 },
       steps: years.map((y) => ({
         label: String(y),
         method: "animate",
@@ -421,7 +420,7 @@ function renderRace(varName, serieName, topN) {
       x: 0.02, xanchor: "left",
       font: { size: 14 }
     },
-    height: 520,
+    height: 560,
     // FIX: margens fixas (evita reflow/deslocamento)
     margin: { l: 260, r: 10, t: 78, b: 125 },
     separators: ".,",
@@ -440,7 +439,7 @@ function renderRace(varName, serieName, topN) {
     updatemenus: [{
       type: "buttons",
       direction: "left",
-      x: 0.02, y: 0.02,
+      x: 0.02, y: 0.00,
       xanchor: "left", yanchor: "bottom",
       showactive: false,
       buttons: [
@@ -450,9 +449,10 @@ function renderRace(varName, serieName, topN) {
     }],
     sliders: [{
       active: 0,
-      x: 0.20, y: 0.02, len: 0.78,
+      x: 0.20, y: 0.00, len: 0.78,
       xanchor: "left", yanchor: "bottom",
       currentvalue: { prefix: "Ano: " },
+      pad: { t: 0, b: 0 },
       steps: years.map(y => ({
         label: String(y),
         method: "animate",
@@ -629,7 +629,7 @@ function renderSeriesChart(varName, serieName, codesSelected, showMeanYear) {
   const layout = {
     title: `Série temporal — ${varName} (${serieName})`,
     height: 620,
-    margin: {l: 90, r: 20, t: 60, b: 55},
+    margin: {l: 95, r: 20, t: 60, b: 55},
     separators: ".,",
     hovermode: "x unified",
     xaxis: {title:"Ano", automargin:true},
