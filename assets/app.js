@@ -336,14 +336,156 @@ function renderMap(varName, serieName) {
 /* =========================
    PANORAMA: Bar chart race (CORRIGIDO)
 ========================= */
-currentvalue: { prefix: "Ano: ", visible: false },
-      pad: { t: 0, b: 0 },
-      steps: years.map(y => ({
-        label: String(y),
-        method: "animate",
-        args: [[String(y)], { mode: "immediate", frame: { duration: 0, redraw: true }, transition: { duration: 0 } }]
-      }))
-    }]
+function renderRace(varName, serieName, topN) {
+  const key = buildKey(varName, serieName);
+  const years = state.comboYears.get(key) || [];
+  if (!years.length) {
+    Plotly.newPlot("divRace", [], { title: "Sem dados" });
+    return;
+  }
+
+  const byYear = state.cube.get(key).byYear;
+
+  function topForYear(y) {
+    const z = byYear.get(y);
+    const items = [];
+    for (let i = 0; i < z.length; i++) {
+      const v = z[i];
+      if (v == null || !isFinite(v)) continue;
+      items.push({ idx: i, code: state.codes[i], name: state.names[i], val: v });
+    }
+    items.sort((a, b) => b.val - a.val);
+    return items.slice(0, topN);
+  }
+
+  // FIX: range X fixo (não re-escala ao longo do tempo -> não desloca)
+  let globalMax = 0;
+  for (const y of years) {
+    const z = byYear.get(y);
+    for (const v of z) {
+      if (v != null && isFinite(v) && v > globalMax) globalMax = v;
+    }
+  }
+  if (!globalMax || !isFinite(globalMax)) globalMax = 1;
+  const xMax = globalMax * 1.05;
+
+  const y0 = years[0];
+  const top0 = topForYear(y0).reverse();
+
+  const ann = (y) => ([{
+    text: `Ano: <b>${y}</b>`,
+    x: 0.99, y: 0.98,
+    xref: "paper", yref: "paper",
+    xanchor: "right", yanchor: "top",
+    showarrow: false,
+    bgcolor: "rgba(255,255,255,0.75)",
+    bordercolor: "rgba(0,0,0,0.20)",
+    borderwidth: 1,
+    font: { size: 12 }
+  }]);
+
+  const frames = years.map((y) => {
+    const top = topForYear(y).reverse();
+    return {
+      name: String(y),
+      data: [{
+        x: top.map(d => d.val),
+        y: top.map(d => d.name),
+        customdata: top.map(d => [d.code]),
+        meta: y
+      }],
+      layout: {
+        annotations: ann(y)
+      }
+    };
+  });
+
+  const trace = {
+    type: "bar",
+    orientation: "h",
+    x: top0.map(d => d.val),
+    y: top0.map(d => d.name),
+    customdata: top0.map(d => [d.code]),
+    meta: y0,
+    hovertemplate:
+      "<b>%{y}</b><br>" +
+      "Ano: %{meta}<br>" +
+      "Código: %{customdata[0]}<br>" +
+      "Valor: R$ %{x:,.0f}<extra></extra>"
+  };
+
+    const layout = {
+    height: 520,
+    margin: { l: 240, r: 10, t: 70, b: 130 },
+    title: {
+      text: `Top ${topN} — ${varName} (${serieName})`,
+      x: 0.5,
+      xanchor: "center",
+      font: { size: 16 }
+    },
+    xaxis: {
+      range: [0, maxX],
+      fixedrange: true,
+      tickformat: ",.0f",
+      showgrid: true,
+      zeroline: false
+    },
+    yaxis: { fixedrange: true, automargin: true },
+    bargap: 0.25,
+    separators: ".,",
+    annotations: [
+      {
+        xref: "paper",
+        yref: "paper",
+        x: 0.98,
+        y: 0.98,
+        xanchor: "right",
+        yanchor: "top",
+        text: `Ano: <b>${years[0]}</b>`,
+        showarrow: false,
+        font: { size: 16 },
+        bgcolor: "rgba(255,255,255,0.85)",
+        bordercolor: "rgba(0,0,0,0.25)",
+        borderwidth: 1,
+        borderpad: 4
+      }
+    ],
+    updatemenus: [
+      {
+        type: "buttons",
+        showactive: false,
+        x: 0.02,
+        y: 0.02,
+        xanchor: "left",
+        yanchor: "bottom",
+        direction: "left",
+        pad: { t: 0, r: 10 },
+        buttons: [
+          {
+            label: "Play",
+            method: "animate",
+            args: [null, { fromcurrent: true, frame: { duration: 650, redraw: true }, transition: { duration: 350 } }]
+          },
+          { label: "Pause", method: "animate", args: [[null], { mode: "immediate", frame: { duration: 0, redraw: false }, transition: { duration: 0 } }] }
+        ]
+      }
+    ],
+    sliders: [
+      {
+        active: 0,
+        x: 0.25,
+        len: 0.73,
+        y: 0.02,
+        yanchor: "bottom",
+        pad: { t: 0, b: 0 },
+        currentvalue: { visible: false },
+        steps: years.map((y) => ({
+          label: String(y),
+          method: "animate",
+          args: [[String(y)], { mode: "immediate", frame: { duration: 650, redraw: true }, transition: { duration: 350 } }]
+        }))
+      }
+    ]
   };
 
   Plotly.newPlot("divRace", [trace], layout, { displayModeBar: true }).then(gd => {
