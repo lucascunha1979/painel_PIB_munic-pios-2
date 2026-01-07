@@ -422,7 +422,7 @@ function renderRace(varName, serieName, topN) {
     },
     height: 560,
     // FIX: margens fixas (evita reflow/deslocamento)
-    margin: { l: 260, r: 10, t: 78, b: 165 },
+    margin: { l: 260, r: 10, t: 78, b: 210 },
     separators: ".,",
     xaxis: {
       title: "R$",
@@ -439,7 +439,7 @@ function renderRace(varName, serieName, topN) {
     updatemenus: [{
       type: "buttons",
       direction: "left",
-      x: 0.02, y: 0.00,
+      x: 0.02, y: -0.24,
       xanchor: "left", yanchor: "bottom",
       showactive: false,
       buttons: [
@@ -449,7 +449,7 @@ function renderRace(varName, serieName, topN) {
     }],
     sliders: [{
       active: 0,
-      x: 0.20, y: 0.00, len: 0.78,
+      x: 0.30, y: -0.24, len: 0.68,
       xanchor: "left", yanchor: "bottom",
       currentvalue: { prefix: "Ano: " },
       pad: { t: 0, b: 0 },
@@ -625,6 +625,50 @@ function renderSeriesChart(varName, serieName, codesSelected, showMeanYear) {
 
   const muniNames = muniIdxs.map(i=>state.names[i]);
   $("seriesMeta").textContent = `${varName} (${serieName}) | Municípios: ${muniNames.slice(0,6).join(", ")}${muniNames.length>6?"…":""}`;
+  // --- Formatação monetária compacta no eixo Y (mil/mi/bi) ---
+  const _yAll = [];
+  for (const tr of traces) {
+    if (!tr || !Array.isArray(tr.y)) continue;
+    for (const v of tr.y) if (v != null && isFinite(v)) _yAll.push(v);
+  }
+  const _yMin = _yAll.length ? Math.min(..._yAll) : 0;
+  const _yMax = _yAll.length ? Math.max(..._yAll) : 0;
+
+  function _niceStep(range, targetTicks=5) {
+    if (!isFinite(range) || range <= 0) return 1;
+    const rough = range / targetTicks;
+    const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+    const r = rough / pow10;
+    const mult = (r <= 1) ? 1 : (r <= 2) ? 2 : (r <= 5) ? 5 : 10;
+    return mult * pow10;
+  }
+
+  function _makeCompactTicks(minV, maxV) {
+    const span = maxV - minV;
+    const step = _niceStep(span || Math.abs(maxV) || 1, 5);
+
+    const start = Math.floor(minV / step) * step;
+    const end   = Math.ceil(maxV / step) * step;
+
+    const absMax = Math.max(Math.abs(minV), Math.abs(maxV));
+    let unit = 1, suf = "";
+    if (absMax >= 1e9) { unit = 1e9; suf = " bi"; }
+    else if (absMax >= 1e6) { unit = 1e6; suf = " mi"; }
+    else if (absMax >= 1e3) { unit = 1e3; suf = " mil"; }
+
+    const fmt = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
+
+    const tickvals = [];
+    const ticktext = [];
+    for (let v = start; v <= end + step/2; v += step) {
+      tickvals.push(v);
+      ticktext.push(fmt.format(v / unit) + suf);
+    }
+    return { tickvals, ticktext };
+  }
+
+  const _ticks = _makeCompactTicks(_yMin, _yMax);
+
 
   const layout = {
     title: `Série temporal — ${varName} (${serieName})`,
@@ -633,7 +677,7 @@ function renderSeriesChart(varName, serieName, codesSelected, showMeanYear) {
     separators: ".,",
     hovermode: "x unified",
     xaxis: {title:"Ano", automargin:true},
-    yaxis: {title:"R$", automargin:true, separatethousands:true, tickprefix:"R$ ", tickformat:",.0f"}
+    yaxis: {title:"R$", automargin:true, tickmode:"array", tickvals: _ticks.tickvals, ticktext: _ticks.ticktext}
   };
 
   Plotly.newPlot("divSeries", traces, layout, {displayModeBar:true});
