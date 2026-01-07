@@ -420,9 +420,9 @@ function renderRace(varName, serieName, topN) {
       x: 0.02, xanchor: "left",
       font: { size: 14 }
     },
-    height: 560,
+    height:  640,
     // FIX: margens fixas (evita reflow/deslocamento)
-    margin: { l: 260, r: 10, t: 78, b: 210 },
+    margin: { l: 260, r: 10, t: 78, b: 230 },
     separators: ".,",
     xaxis: {
       title: "R$",
@@ -439,7 +439,7 @@ function renderRace(varName, serieName, topN) {
     updatemenus: [{
       type: "buttons",
       direction: "left",
-      x: 0.02, y: -0.24,
+      x: 0.02, y: -0.42,
       xanchor: "left", yanchor: "bottom",
       showactive: false,
       buttons: [
@@ -449,10 +449,10 @@ function renderRace(varName, serieName, topN) {
     }],
     sliders: [{
       active: 0,
-      x: 0.30, y: -0.24, len: 0.68,
+      x: 0.30, y: -0.42, len: 0.68,
       xanchor: "left", yanchor: "bottom",
       currentvalue: { prefix: "Ano: " },
-      pad: { t: 0, b: 0 },
+      pad: { t: 25, b: 0 },
       steps: years.map(y => ({
         label: String(y),
         method: "animate",
