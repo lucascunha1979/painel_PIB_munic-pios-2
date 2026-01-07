@@ -299,7 +299,7 @@ function renderMap(varName, serieName) {
     updatemenus: [{
       type: "buttons",
       direction: "left",
-      x: 0.02, y: 0.02,
+      x: 0.02, y: -0.28,
       xanchor: "left", yanchor: "bottom",
       showactive: false,
       buttons: [
@@ -317,7 +317,7 @@ function renderMap(varName, serieName) {
     }],
     sliders: [{
       active: 0,
-      x: 0.20, y: 0.02, len: 0.78,
+      x: 0.25, y: -0.28, len: 0.78,
       xanchor: "left", yanchor: "bottom",
       currentvalue: { prefix: "Ano: " },
       steps: years.map((y) => ({
@@ -422,7 +422,7 @@ function renderRace(varName, serieName, topN) {
     },
     height: 560,
     // FIX: margens fixas (evita reflow/deslocamento)
-    margin: { l: 260, r: 10, t: 78, b: 125 },
+    margin: { l: 260, r: 10, t: 78, b: 165 },
     separators: ".,",
     xaxis: {
       title: "R$",
@@ -633,7 +633,7 @@ function renderSeriesChart(varName, serieName, codesSelected, showMeanYear) {
     separators: ".,",
     hovermode: "x unified",
     xaxis: {title:"Ano", automargin:true},
-    yaxis: {title:"R$", automargin:true, tickformat:",.0f"}
+    yaxis: {title:"R$", automargin:true, separatethousands:true, tickprefix:"R$ ", tickformat:",.0f"}
   };
 
   Plotly.newPlot("divSeries", traces, layout, {displayModeBar:true});
