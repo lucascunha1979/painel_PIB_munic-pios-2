@@ -59,36 +59,6 @@ function quantile(sorted, q) {
 
 function buildKey(v, s){ return `${v}||${s}`; }
 
-
-/* =========================
-   Série fixa (somente nominal / preços correntes)
-========================= */
-let FIXED_SERIE = null;
-
-function pickNominalSerie(serieList) {
-  const s = (x) => String(x || "").toLowerCase();
-
-  // 1) Preferir série que mencione "corrente(s)" ou "nominal"
-  const prefer = serieList.find(x =>
-    s(x).includes("corrente") ||
-    s(x).includes("preços correntes") ||
-    s(x).includes("nominal")
-  );
-  if (prefer) return prefer;
-
-  // 2) Caso não tenha, escolher a primeira que NÃO pareça deflacionada/real
-  const notReal = serieList.find(x =>
-    !s(x).includes("real") &&
-    !s(x).includes("deflator") &&
-    !s(x).includes("2023") &&
-    !s(x).includes("preços de 2023")
-  );
-  if (notReal) return notReal;
-
-  // 3) fallback
-  return serieList[0] || null;
-}
-
 /* =========================
    Loaders
 ========================= */
@@ -420,12 +390,12 @@ function renderRace(varName, serieName, topN) {
       x: 0.02, xanchor: "left",
       font: { size: 14 }
     },
-    height: 520,
+    height: 560,
     // FIX: margens fixas (evita reflow/deslocamento)
-    margin: { l: 260, r: 10, t: 78, b: 40 },
+    margin: { l: 260, r: 10, t: 78, b: 120 },
     separators: ".,",
     xaxis: {
-      title: "R$",
+      title: { text: "R$", standoff: 10 },
       tickformat: ",.0f",
       range: [0, xMax],
       fixedrange: true
@@ -439,7 +409,7 @@ function renderRace(varName, serieName, topN) {
     updatemenus: [{
       type: "buttons",
       direction: "left",
-      x: 0.02, y: 0.02,
+      x: 0.02, y: -0.18,
       xanchor: "left", yanchor: "bottom",
       showactive: false,
       buttons: [
@@ -449,9 +419,10 @@ function renderRace(varName, serieName, topN) {
     }],
     sliders: [{
       active: 0,
-      x: 0.20, y: 0.02, len: 0.78,
+      x: 0.22, y: -0.18, len: 0.76,
       xanchor: "left", yanchor: "bottom",
       currentvalue: { prefix: "Ano: " },
+      pad: { t: 0, b: 0 },
       steps: years.map(y => ({
         label: String(y),
         method: "animate",
@@ -628,11 +599,11 @@ function renderSeriesChart(varName, serieName, codesSelected, showMeanYear) {
   const layout = {
     title: `Série temporal — ${varName} (${serieName})`,
     height: 620,
-    margin: {l: 10, r: 10, t: 50, b: 35},
+    margin: {l: 90, r: 20, t: 60, b: 55},
     separators: ".,",
     hovermode: "x unified",
-    xaxis: {title:"Ano"},
-    yaxis: {title:"R$"}
+    xaxis: {title:"Ano", automargin:true},
+    yaxis: {title:"R$", automargin:true, tickformat:",.0f"}
   };
 
   Plotly.newPlot("divSeries", traces, layout, {displayModeBar:true});
@@ -746,7 +717,7 @@ function downloadWordDoc(filenameBase, title, filters, tableHeaders, tableRows) 
 ========================= */
 function syncPanoramaControls() {
   const v = $("selVar").value;
-  const s = FIXED_SERIE;
+  const s = $("selSerie").value;
   const key = buildKey(v,s);
   const years = state.comboYears.get(key) || [];
   fillYears($("selAnoRanking"), years);
@@ -754,7 +725,7 @@ function syncPanoramaControls() {
 
 function applyPanorama() {
   const v = $("selVar").value;
-  const s = FIXED_SERIE;
+  const s = $("selSerie").value;
   const topN = Math.max(5, Math.min(50, Number($("inpTopN").value || 15)));
   $("inpTopN").value = String(topN);
 
@@ -773,7 +744,7 @@ function applyPanorama() {
 
 function applySeries() {
   const v = $("selVar2").value;
-  const s = FIXED_SERIE;
+  const s = $("selSerie2").value;
   const codesSelected = getSelectedCodes($("selMunis"));
   const showMeanYear = $("chkMeanYear").checked;
 
@@ -806,23 +777,23 @@ async function init() {
   await loadGeo();
   await loadCSV();
 
-  // Fixar série nominal (preços correntes)
-  FIXED_SERIE = pickNominalSerie(state.serieList);
-  if (!FIXED_SERIE) throw new Error('Nenhuma série encontrada no CSV.');
-
-
   // Preencher selects panorama
   fillSelect($("selVar"), state.varList, "produto interno bruto");
+  fillSelect($("selSerie"), state.serieList, "real");
+
   // Preencher selects municípios (aba 2)
   fillSelect($("selVar2"), state.varList, "produto interno bruto");
+  fillSelect($("selSerie2"), state.serieList, "real");
+
   // preencher lista de municípios para combo inicial
-  fillMunicipios($("selMunis"), $("selVar2").value, FIXED_SERIE);
+  fillMunicipios($("selMunis"), $("selVar2").value, $("selSerie2").value);
 
   // listeners panorama
   $("selVar").addEventListener("change", () => { syncPanoramaControls(); applyPanorama(); });
+  $("selSerie").addEventListener("change", () => { syncPanoramaControls(); applyPanorama(); });
   $("inpTopN").addEventListener("change", applyPanorama);
   $("selAnoRanking").addEventListener("change", () => {
-    const v = $("selVar").value, s = FIXED_SERIE;
+    const v = $("selVar").value, s = $("selSerie").value;
     const topN = Number($("inpTopN").value || 15);
     updateRankingTable(v,s,$("selAnoRanking").value,topN);
   });
@@ -831,7 +802,7 @@ async function init() {
   // export ranking
   $("btnWordRanking").addEventListener("click", () => {
     const v = $("selVar").value;
-    const s = FIXED_SERIE;
+    const s = $("selSerie").value;
     const year = $("selAnoRanking").value;
     const topN = Number($("inpTopN").value || 15);
 
@@ -855,7 +826,11 @@ async function init() {
 
   // listeners série (aba 2)
   $("selVar2").addEventListener("change", () => {
-    fillMunicipios($("selMunis"), $("selVar2").value, FIXED_SERIE);
+    fillMunicipios($("selMunis"), $("selVar2").value, $("selSerie2").value);
+    applySeries();
+  });
+  $("selSerie2").addEventListener("change", () => {
+    fillMunicipios($("selMunis"), $("selVar2").value, $("selSerie2").value);
     applySeries();
   });
   $("selMunis").addEventListener("change", applySeries);
@@ -867,7 +842,7 @@ async function init() {
   // export série (lista)
   $("btnWordSeries").addEventListener("click", () => {
     const v = $("selVar2").value;
-    const s = FIXED_SERIE;
+    const s = $("selSerie2").value;
     const codesSelected = getSelectedCodes($("selMunis"));
     if (!codesSelected.length) return;
 
@@ -896,11 +871,6 @@ async function init() {
       $("statusSeries").textContent = "Recarregando…";
       await loadGeo();
       await loadCSV();
-
-  // Fixar série nominal (preços correntes)
-  FIXED_SERIE = pickNominalSerie(state.serieList);
-  if (!FIXED_SERIE) throw new Error('Nenhuma série encontrada no CSV.');
-
       applyPanorama();
       applySeries();
     } catch(e) {
