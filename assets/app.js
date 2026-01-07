@@ -414,78 +414,51 @@ function renderRace(varName, serieName, topN) {
       "Valor: R$ %{x:,.0f}<extra></extra>"
   };
 
-    const layout = {
-    height: 520,
-    margin: { l: 240, r: 10, t: 70, b: 130 },
+  const layout = {
     title: {
       text: `Top ${topN} — ${varName} (${serieName})`,
-      x: 0.5,
-      xanchor: "center",
-      font: { size: 16 }
+      x: 0.02, xanchor: "left",
+      font: { size: 14 }
     },
-    xaxis: {
-      range: [0, maxX],
-      fixedrange: true,
-      tickformat: ",.0f",
-      showgrid: true,
-      zeroline: false
-    },
-    yaxis: { fixedrange: true, automargin: true },
-    bargap: 0.25,
+    height: 520,
+    // FIX: margens fixas (evita reflow/deslocamento)
+    margin: { l: 260, r: 10, t: 70, b: 150 },
     separators: ".,",
-    annotations: [
-      {
-        xref: "paper",
-        yref: "paper",
-        x: 0.98,
-        y: 0.98,
-        xanchor: "right",
-        yanchor: "top",
-        text: `Ano: <b>${years[0]}</b>`,
-        showarrow: false,
-        font: { size: 16 },
-        bgcolor: "rgba(255,255,255,0.85)",
-        bordercolor: "rgba(0,0,0,0.25)",
-        borderwidth: 1,
-        borderpad: 4
-      }
-    ],
-    updatemenus: [
-      {
-        type: "buttons",
-        showactive: false,
-        x: 0.02,
-        y: 0.02,
-        xanchor: "left",
-        yanchor: "bottom",
-        direction: "left",
-        pad: { t: 0, r: 10 },
-        buttons: [
-          {
-            label: "Play",
-            method: "animate",
-            args: [null, { fromcurrent: true, frame: { duration: 650, redraw: true }, transition: { duration: 350 } }]
-          },
-          { label: "Pause", method: "animate", args: [[null], { mode: "immediate", frame: { duration: 0, redraw: false }, transition: { duration: 0 } }] }
-        ]
-      }
-    ],
-    sliders: [
-      {
-        active: 0,
-        x: 0.25,
-        len: 0.73,
-        y: 0.02,
-        yanchor: "bottom",
-        pad: { t: 0, b: 0 },
-        currentvalue: { visible: false },
-        steps: years.map((y) => ({
-          label: String(y),
-          method: "animate",
-          args: [[String(y)], { mode: "immediate", frame: { duration: 650, redraw: true }, transition: { duration: 350 } }]
-        }))
-      }
-    ]
+    xaxis: {
+      title: "R$", title_standoff: 20,
+      tickformat: ",.0f",
+      range: [0, xMax],
+      fixedrange: true
+    },
+    yaxis: {
+      automargin: false,
+      fixedrange: true,
+      tickfont: { size: 11 }
+    },
+    annotations: ann(y0),
+    updatemenus: [{
+      type: "buttons",
+      direction: "left",
+      x: 0.02, y: -0.22,
+      xanchor: "left", yanchor: "bottom",
+      showactive: false,
+      buttons: [
+        { label: "Play", method: "animate", args: [null, { fromcurrent: true, frame: { duration: 650, redraw: true }, transition: { duration: 0 } }] },
+        { label: "Pause", method: "animate", args: [[null], { mode: "immediate", frame: { duration: 0, redraw: false }, transition: { duration: 0 } }] }
+      ]
+    }],
+    sliders: [{
+      active: 0,
+      x: 0.30, y: -0.22, len: 0.68,
+      xanchor: "left", yanchor: "bottom",
+      currentvalue: { prefix: "Ano: " , visible: false},
+      pad: { t: 8, b: 0 },
+      steps: years.map(y => ({
+        label: String(y),
+        method: "animate",
+        args: [[String(y)], { mode: "immediate", frame: { duration: 0, redraw: true }, transition: { duration: 0 } }]
+      }))
+    }]
   };
 
   Plotly.newPlot("divRace", [trace], layout, { displayModeBar: true }).then(gd => {
